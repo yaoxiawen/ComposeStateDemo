@@ -1,5 +1,6 @@
 package com.example.composestatedemo.todo.one
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,9 +12,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.composestatedemo.todo.TodoItem
+import com.example.composestatedemo.todo.util.generateRandomTodoItem
 
 @Composable
-fun TodoScreen(items: List<TodoItem>) {
+fun TodoScreen(
+    items: List<TodoItem>,
+    onAddItem: (TodoItem) -> Unit,
+    onRemoveItem: (TodoItem) -> Unit
+) {
     Column {
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -22,12 +28,13 @@ fun TodoScreen(items: List<TodoItem>) {
             items(items) {
                 TodoRow(
                     todo = it,
+                    onRemoveItem,
                     modifier = Modifier.fillParentMaxWidth()
                 )
             }
         }
         Button(
-            onClick = { },
+            onClick = { onAddItem(generateRandomTodoItem()) },
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
@@ -38,9 +45,15 @@ fun TodoScreen(items: List<TodoItem>) {
 }
 
 @Composable
-fun TodoRow(todo: TodoItem, modifier: Modifier = Modifier) {
+fun TodoRow(
+    todo: TodoItem,
+    onItemClicked: (TodoItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = modifier
+            .clickable { onItemClicked(todo) }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween //子元素水平均匀分布
     ) {
         Text(text = todo.task)
