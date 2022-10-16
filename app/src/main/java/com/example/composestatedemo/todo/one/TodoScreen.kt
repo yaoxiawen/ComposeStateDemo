@@ -62,6 +62,7 @@ fun TodoRow(
         Text(text = todo.task)
         //以todo.id为key把iconAlpha存下来，这样就不会每次重组的时候都变化了
         //发现没有todo.id为key也可以，应该是以数据对象本身为key了
+        //remember状态保存
         val iconAlpha: Float = remember(todo.id) { randomTint() }
         Icon(
             imageVector = todo.icon.imageVector,

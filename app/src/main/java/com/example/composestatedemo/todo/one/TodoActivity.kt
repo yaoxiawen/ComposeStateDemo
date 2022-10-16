@@ -25,6 +25,7 @@ class TodoActivity : ComponentActivity() {
 
     @Composable
     fun TodoActivityScreen() {
+        //LiveData.observeAsState 状态监听，适用于viewmodel的MutableLiveData
         val items: List<TodoItem> by viewModel.todoItems.observeAsState(listOf())
         TodoScreen(
             items = items,
