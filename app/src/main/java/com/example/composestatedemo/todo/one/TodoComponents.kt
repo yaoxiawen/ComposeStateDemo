@@ -1,9 +1,11 @@
 package com.example.composestatedemo.todo.one
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -13,12 +15,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -27,8 +31,35 @@ import androidx.compose.ui.unit.dp
 import com.example.composestatedemo.todo.TodoIcon
 import com.example.composestatedemo.todo.TodoItem
 
+/**
+ * 输入框灰色背景
+ */
 @Composable
-fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
+fun TodoItemInputBackground(
+    elevate: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    //帧动画的形式展现Surface底部的阴影
+    val animatedElevation by animateDpAsState(
+        targetValue = if (elevate) 1.dp else 0.dp,
+        animationSpec = TweenSpec(500)
+    )
+    Surface(
+        color = MaterialTheme.colors.onSurface.copy(alpha = 0.05f),
+        //Surface底部有一个小小的阴影
+        elevation = animatedElevation,
+        shape = RectangleShape
+    ) {
+        Row(
+            modifier = modifier.animateContentSize(animationSpec = TweenSpec(300)),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun TodoItemEntryInput(onItemComplete: (TodoItem) -> Unit) {
     //MutableState 类似于MutableLiveData，在compose中使用，配合remember ，不然会在每次重组时重新初始化
     //通过MutableState三种方式声明一个可组合对象
     //val state = remember{mutableStateOf(default)}
@@ -42,10 +73,30 @@ fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
     }
     val iconsVisible = text.isNotBlank()
     val submit = {
-        onItemComplete(TodoItem(text))
+        onItemComplete(TodoItem(text,icon))
         setText("")
         setIcon(TodoIcon.Default)
     }
+    TodoItemInput(
+        text = text,
+        onTextChange = setText,
+        icon = icon,
+        onIconChange = setIcon,
+        submit = submit,
+        iconsVisible = iconsVisible
+    )
+}
+
+@Composable
+fun TodoItemInput(
+    text: String,
+    onTextChange: (String) -> Unit,
+    icon: TodoIcon,
+    onIconChange: (TodoIcon) -> Unit,
+    submit: () -> Unit,
+    iconsVisible: Boolean
+) {
+
     Column {
         Row(
             modifier = Modifier
@@ -54,7 +105,7 @@ fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
         ) {
             TodoInputText(
                 text = text,
-                onTextChange = setText,
+                onTextChange = onTextChange,
                 onImeAction = submit,
                 modifier = Modifier
                     .weight(1f)
@@ -70,7 +121,7 @@ fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
         if (iconsVisible) {
             AnimatedIconRow(
                 icon = icon,
-                onIconChange = setIcon,
+                onIconChange = onIconChange,
                 modifier = Modifier.padding(top = 8.dp)
             )
         } else {
@@ -87,7 +138,7 @@ fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
 fun TodoInputText(
     text: String,
     onTextChange: (String) -> Unit,
-    onImeAction: () -> Unit = {},
+    onImeAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
