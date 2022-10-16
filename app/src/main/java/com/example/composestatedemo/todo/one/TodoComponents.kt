@@ -9,15 +9,20 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.composestatedemo.todo.TodoIcon
 import com.example.composestatedemo.todo.TodoItem
@@ -36,6 +41,11 @@ fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
         mutableStateOf(TodoIcon.Default)
     }
     val iconsVisible = text.isNotBlank()
+    val submit = {
+        onItemComplete(TodoItem(text))
+        setText("")
+        setIcon(TodoIcon.Default)
+    }
     Column {
         Row(
             modifier = Modifier
@@ -45,15 +55,13 @@ fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
             TodoInputText(
                 text = text,
                 onTextChange = setText,
+                onImeAction = submit,
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 8.dp)
             )
             TodoEditButton(
-                onClick = {
-                    onItemComplete(TodoItem(text))
-                    setText("")
-                },
+                onClick = submit,
                 text = "Add",
                 modifier = Modifier.align(Alignment.CenterVertically),
                 enabled = text.isNotBlank()
@@ -74,18 +82,27 @@ fun TodoItemInput(onItemComplete: (TodoItem) -> Unit) {
 /**
  * 输入框，参数1外部传入显示内容，参数2传往外部内容变化
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TodoInputText(
     text: String,
     onTextChange: (String) -> Unit,
+    onImeAction: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     TextField(
         value = text,
         onValueChange = onTextChange,
         colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent),
         maxLines = 1,
-        modifier = modifier
+        modifier = modifier,
+        //配置软键盘
+        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = {
+            onImeAction()
+            keyboardController?.hide()
+        })
     )
 }
 
