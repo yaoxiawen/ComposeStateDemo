@@ -1,5 +1,6 @@
 package com.example.composestatedemo.todo.one
 
+import androidx.compose.runtime.*
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -7,19 +8,35 @@ import com.example.composestatedemo.todo.TodoItem
 
 
 class TodoViewModel : ViewModel() {
-    private var _todoItems = MutableLiveData(listOf<TodoItem>())
-    val todoItems: LiveData<List<TodoItem>> = _todoItems
+    //TodoItem集合只读，ViewModel成为状态容器，因此不需要remember
+    var todoItems = mutableStateListOf<TodoItem>()
+        private set
+
+    //当前正在编辑的TodoItem的索引位置
+    private var currentEditPosition by mutableStateOf(-1)
+
+    //当前正在编辑的TodoItem的对象
+    val currentEditItem: TodoItem?
+        get() = todoItems.getOrNull(currentEditPosition)
 
     fun addItem(item: TodoItem) {
-        //要保证_todoItems所指向的对象有变，不能还是原来的list对象只是里面内容变了
-        //plus 保证了是新创建了一个ArrayList
-        _todoItems.value = _todoItems.value?.plus(item)
+        todoItems.add(item)
     }
 
     fun removeItem(item: TodoItem) {
-        //toMutableList保证了是新创建了一个ArrayList
-        _todoItems.value = _todoItems.value?.toMutableList().also {
-            it?.remove(item)
-        }
+        todoItems.remove(item)
+        onEditDone()
+    }
+
+    fun onEditDone() {
+        currentEditPosition = -1
+    }
+
+    fun onEditItemSelected(item: TodoItem) {
+        currentEditPosition = todoItems.indexOf(item)
+    }
+
+    fun onEditItemChange(item: TodoItem) {
+        todoItems[currentEditPosition] = item
     }
 }

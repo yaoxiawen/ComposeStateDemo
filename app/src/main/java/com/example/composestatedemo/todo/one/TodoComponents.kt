@@ -27,9 +27,51 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.composestatedemo.todo.TodoIcon
 import com.example.composestatedemo.todo.TodoItem
+
+/**
+ * 当TodoItem列表中的条目被选中时，会弹出一个输入框，用于编辑选中TodoItem的信息
+ * @param item 选中的条目
+ * @param onEditItemChange 编辑条目时的回调
+ * @param onEditDone 编辑完成时的回调
+ * @param onRemoveItem 删除条目时的回调
+ */
+@Composable
+fun TodoItemInlineEditor(
+    item: TodoItem,
+    onEditItemChange: (TodoItem) -> Unit,
+    onEditDone: () -> Unit,
+    onRemoveItem: () -> Unit
+) {
+    TodoItemInput(
+        text = item.task,
+        onTextChange = { onEditItemChange(item.copy(task = it)) },
+        icon = item.icon,
+        onIconChange = { onEditItemChange(item.copy(icon = it)) },
+        submit = onEditDone,
+        iconsVisible = true
+    ) {
+        //保存和删除两个图标
+        Row {
+            val shrinkButtons = Modifier.widthIn(20.dp)
+            TextButton(onClick = onEditDone, modifier = shrinkButtons) {
+                Text(
+                    text = "\uD83D\uDCBE", //emoji符号，软键盘
+                    textAlign = TextAlign.End
+                )
+            }
+            TextButton(onClick = onRemoveItem, modifier = shrinkButtons) {
+                Text(
+                    text = "X", //emoji符号，软键盘
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+    }
+}
 
 /**
  * 输入框灰色背景
@@ -73,7 +115,7 @@ fun TodoItemEntryInput(onItemComplete: (TodoItem) -> Unit) {
     }
     val iconsVisible = text.isNotBlank()
     val submit = {
-        onItemComplete(TodoItem(text,icon))
+        onItemComplete(TodoItem(text, icon))
         setText("")
         setIcon(TodoIcon.Default)
     }
@@ -84,7 +126,13 @@ fun TodoItemEntryInput(onItemComplete: (TodoItem) -> Unit) {
         onIconChange = setIcon,
         submit = submit,
         iconsVisible = iconsVisible
-    )
+    ) {
+        TodoEditButton(
+            onClick = submit,
+            text = "Add",
+            enabled = text.isNotBlank()
+        )
+    }
 }
 
 @Composable
@@ -94,7 +142,10 @@ fun TodoItemInput(
     icon: TodoIcon,
     onIconChange: (TodoIcon) -> Unit,
     submit: () -> Unit,
-    iconsVisible: Boolean
+    iconsVisible: Boolean,
+    //最右侧的图标和按钮，在编辑时会有删除和保存两个图标，添加时会有一个"Add"按钮，
+    //从外面传入组件进行组合
+    buttonSlot: @Composable () -> Unit
 ) {
 
     Column {
@@ -111,12 +162,10 @@ fun TodoItemInput(
                     .weight(1f)
                     .padding(end = 8.dp)
             )
-            TodoEditButton(
-                onClick = submit,
-                text = "Add",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                enabled = text.isNotBlank()
-            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                buttonSlot()
+            }
         }
         if (iconsVisible) {
             AnimatedIconRow(
